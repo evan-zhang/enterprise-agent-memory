@@ -1,0 +1,22 @@
+{
+  "id": "SOP-20260330-001",
+  "title": "待讨论任务",
+  "mode": "full",
+  "owner": "evan",
+  "status": "DISCUSSING",
+  "stage": "TARGET",
+  "createdAt": "2026-03-30T22:29:29.559089",
+  "updatedAt": "2026-03-30T22:29:29.559089",
+  "deadline": "",
+  "reason": "",
+  "blockedReason": "",
+  "checklistConfirmed": false,
+  "confirmCount": 0,
+  "upgradedFrom": "",
+  "resume": {
+    "lastCompleted": "",
+    "currentBlocked": "",
+    "waitingFor": "",
+    "nextAction": "完成 TASK.md 目标定义"
+  }
+}

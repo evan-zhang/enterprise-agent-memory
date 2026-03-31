@@ -4,12 +4,13 @@
 
 ## 项目状态
 
-**当前阶段**：设计完成，待实现
+**当前阶段**：设计完成，待实现（CHECKLIST 阶段）
 
 **设计文档**：
 - [设计总结](docs/DESIGN-SUMMARY.md) - 1 页纸快速了解
 - [完整设计](docs/DESIGN-FULL.md) - 详细的架构和组件设计
 - [审核报告](docs/REVIEW.md) - 三轮审核的问题和改进
+- [方法论](docs/METHODOLOGY.md) - 本项目使用的方法论
 
 ## 核心问题
 
@@ -38,11 +39,38 @@
 4. **降级策略** — 压缩失败保留完整数据
 5. **简化优先** — 放弃过度设计（DAG/RAG）
 
+## 方法论
+
+本项目使用 **CMS SOP 六阶段方法论**：
+
+```
+TARGET → PLAN → CHECKLIST → EXECUTE → ARCHIVE → DONE
+```
+
+详见 [方法论文档](docs/METHODOLOGY.md)。
+
+### 当前阶段
+
+**PLAN 完成 → CHECKLIST 待开始**
+
+- ✅ 目标定义
+- ✅ 架构设计
+- ✅ 子 Agent 审核（3 轮）
+- ⏳ 确认是否执行
+- ⏳ 实现代码
+- ⏳ 测试验证
+
 ## 目录结构
 
 ```
 enterprise-agent-memory/
+├── README.md               # 项目简介
+├── project-state.json      # 项目状态（CMS SOP）
 ├── docs/                   # 设计文档
+│   ├── METHODOLOGY.md      # 方法论
+│   ├── DESIGN-SUMMARY.md   # 设计总结
+│   ├── DESIGN-FULL.md      # 完整设计
+│   └── REVIEW.md           # 审核报告
 ├── scripts/                # 实现脚本（待开发）
 ├── skills/                 # ClawHub Skill（待发布）
 └── tests/                  # 测试（待开发）
@@ -57,11 +85,17 @@ enterprise-agent-memory/
 
 ## 下一步
 
-1. 实现 `update_project_index.py`
-2. 实现 `switch_project.py`
-3. 实现 `compress_snapshot.py`
-4. 2 周压力测试
-5. 发布到 ClawHub
+1. **CHECKLIST 阶段**：确认是否执行、执行范围
+2. **EXECUTE 阶段**：实现三个核心脚本
+   - `update_project_index.py`
+   - `switch_project.py`
+   - `compress_snapshot.py`
+3. **TEST 阶段**：2 周压力测试
+4. **RELEASE 阶段**：发布到 ClawHub
+
+## 参与贡献
+
+详见 [方法论文档](docs/METHODOLOGY.md)，了解如何参与本项目。
 
 ## License
 
@@ -70,3 +104,4 @@ MIT
 ---
 
 *创建时间：2026-03-31*
+*当前阶段：PLAN 完成，CHECKLIST 待开始*
