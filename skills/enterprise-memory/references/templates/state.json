@@ -1,0 +1,22 @@
+{
+  "_comment": "项目状态模板 - Phase 1",
+  "id": "{{PROJECT_ID}}",
+  "name": "{{PROJECT_NAME}}",
+  "status": "DISCUSSING",
+  "stage": "TARGET",
+  "createdAt": "{{CREATED_AT}}",
+  "updatedAt": "{{CREATED_AT}}",
+  "updateCount": 0,
+  "lastIndexSync": null,
+  "resume": {
+    "lastCompleted": "",
+    "currentBlocked": "",
+    "waitingFor": "",
+    "nextAction": ""
+  },
+  "meta": {
+    "description": "",
+    "tags": [],
+    "owner": ""
+  }
+}

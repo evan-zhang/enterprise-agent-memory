@@ -12,6 +12,8 @@
 - [审核报告](docs/REVIEW.md) - 三轮审核的问题和改进
 - [方法论](docs/METHODOLOGY.md) - 本项目使用的方法论
 - [依赖项目](docs/DEPENDENCIES.md) - 依赖的 Skill 及安装方法
+- [架构决策](docs/ARCHITECTURE-DECISION.md) - Skill vs Agent 的选择
+- [CHECKLIST 决策](docs/CHECKLIST.md) - 执行前的四个关键决策
 
 ## 核心问题
 
@@ -39,6 +41,7 @@
 3. **原子性保障** — 临时写 → 校验 → 原子替换
 4. **降级策略** — 压缩失败保留完整数据
 5. **简化优先** — 放弃过度设计（DAG/RAG）
+6. **Skill + 全局记忆层** — 能力与数据分离，跨 Agent 共享
 
 ## 方法论
 
