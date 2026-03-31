@@ -71,6 +71,8 @@ enterprise-agent-memory/
 │   ├── METHODOLOGY.md      # 方法论
 │   ├── DESIGN-SUMMARY.md   # 设计总结
 │   ├── DESIGN-FULL.md      # 完整设计
+│   ├── DEPENDENCIES.md     # 依赖 Skill
+│   ├── DECISIONS.md        # 决策记录
 │   └── REVIEW.md           # 审核报告
 ├── scripts/                # 实现脚本（待开发）
 ├── skills/                 # ClawHub Skill（待发布）
