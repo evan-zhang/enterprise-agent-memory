@@ -11,6 +11,7 @@
 - [完整设计](docs/DESIGN-FULL.md) - 详细的架构和组件设计
 - [审核报告](docs/REVIEW.md) - 三轮审核的问题和改进
 - [方法论](docs/METHODOLOGY.md) - 本项目使用的方法论
+- [依赖项目](docs/DEPENDENCIES.md) - 依赖的 Skill 及安装方法
 
 ## 核心问题
 
