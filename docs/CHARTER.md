@@ -17,7 +17,7 @@
 ### 2.1 目录结构
 
 ```
-projects/                           # 项目根目录
+EAM-projects/                           # 项目根目录
 ├── CHARTER.md                    # 本宪章
 ├── GLOBAL-INDEX.md              # 全局索引
 ├── SOP-{日期}-{序号}-{名称}/   # 项目目录

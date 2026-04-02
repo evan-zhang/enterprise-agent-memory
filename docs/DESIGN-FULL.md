@@ -66,7 +66,7 @@
 
 ### 项目层（CMS SOP）
 
-**项目根目录**：`~/projects/`
+**项目根目录**：`~/.openclaw/EAM-projects/`
 
 **命名规范**：所有项目必须有编号，格式为 `SOP-{日期}-{序号}-{名称}`
 
@@ -95,7 +95,7 @@ projects/
 ```json
 {
   "projectId": "SOP-20260330-001",
-  "projectPath": "~/projects/SOP-20260330-001-企业级Agent记忆体系",
+  "projectPath": "~/.openclaw/EAM-projects/SOP-20260330-001-企业级Agent记忆体系",
   "switchedAt": "2026-03-31T06:50:00"
 }
 ```
@@ -164,12 +164,12 @@ projects/
   - 输出：匹配结果或切换确认
 
 ### 新增能力
-1. **新建项目**：复用 init_instance.py，路径改为 ~/projects/
+1. **新建项目**：复用 init_instance.py，路径改为 ~/.openclaw/EAM-projects/
 2. **搜索项目**：遍历目录，匹配 ID/名称/INDEX.md 内容
 3. **切换项目**：串联切出（保存）+ 切入（加载）流程
 
 ### current-project.json
-位置：`~/projects/current-project.json`
+位置：`~/.openclaw/EAM-projects/current-project.json`
 作用：记录当前项目指针，session 启动时读取
 
 ---

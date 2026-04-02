@@ -89,7 +89,7 @@
 - ClawHub 一键安装
 - 不需要额外 Bot
 
-**全局记忆层**：`~/projects/`
+**全局记忆层**：`~/.openclaw/EAM-projects/`
 - 跨 Agent 共享
 - 统一数据源
 - 简单目录结构

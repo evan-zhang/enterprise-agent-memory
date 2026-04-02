@@ -25,7 +25,7 @@
                     ↓
         ┌───────────────────────┐
         │  全局记忆层            │
-        │  ~/projects/          │
+        │  ~/.openclaw/EAM-projects/          │
         │  - 所有项目数据        │
         │  - 跨 Agent 共享       │
         └───────────────────────┘
@@ -49,7 +49,7 @@
 
 **全局记忆层（数据层）**：
 - 定义：统一的存储位置
-- 位置：`~/projects/`
+- 位置：`~/.openclaw/EAM-projects/`
 - 内容：所有项目的 INDEX.md、state.json、snapshot 等
 - 特点：跨 Agent 共享、单一真相源
 
@@ -97,7 +97,7 @@ Agent = 设备（手机/平板/电脑）
 ### Skill 位置
 
 ```
-~/projects/enterprise-agent-memory/skills/enterprise-memory/
+~/.openclaw/EAM-projects/enterprise-agent-memory/skills/enterprise-memory/
 ├── SKILL.md
 ├── scripts/
 │   ├── update_index.py
@@ -110,7 +110,7 @@ Agent = 设备（手机/平板/电脑）
 ### 全局记忆层位置
 
 ```
-~/projects/
+~/.openclaw/EAM-projects/
 ├── GLOBAL-INDEX.md
 ├── current-project.json
 ├── SOP-20260330-001-TPR/
@@ -123,9 +123,9 @@ Agent = 设备（手机/平板/电脑）
 ### 访问协议
 
 任何 Agent 加载 `enterprise-memory-skill` 后：
-1. 自动读取 `~/projects/current-project.json` 获取当前项目
-2. 读写 `~/projects/{project-id}/` 下的文件
-3. 更新 `~/projects/GLOBAL-INDEX.md`
+1. 自动读取 `~/.openclaw/EAM-projects/current-project.json` 获取当前项目
+2. 读写 `~/.openclaw/EAM-projects/{project-id}/` 下的文件
+3. 更新 `~/.openclaw/EAM-projects/GLOBAL-INDEX.md`
 
 ---
 

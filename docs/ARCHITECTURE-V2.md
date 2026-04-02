@@ -230,9 +230,9 @@ LLM 生成符合 enterprise-memory 约束的 state.json
 
 | CMS SOP 文件 | enterprise-memory 文件 |
 |-------------|----------------------|
-| `sop-instances/SOP-xxx/TASK.md` | `projects/SOP-xxx/TASK.md` |
-| `sop-instances/SOP-xxx/LOG.md` | `projects/SOP-xxx/LOG.md` |
-| `sop-instances/SOP-xxx/state.json` | `projects/SOP-xxx/state.json` |
+| `EAM-projects/SOP-xxx/TASK.md` | `projects/SOP-xxx/TASK.md` |
+| `EAM-projects/SOP-xxx/LOG.md` | `projects/SOP-xxx/LOG.md` |
+| `EAM-projects/SOP-xxx/state.json` | `projects/SOP-xxx/state.json` |
 
 ---
 
