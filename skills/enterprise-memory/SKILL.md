@@ -1,5 +1,11 @@
 # SKILL.md — enterprise-memory
 
+## 项目信息
+
+- **GitHub**: https://github.com/evan-zhang/enterprise-agent-memory
+- **ClawHub**: https://clawhub.com/evan-zhang/enterprise-memory
+- **问题反馈**: https://github.com/evan-zhang/enterprise-agent-memory/issues
+
 ## 触发词
 
 ```
