@@ -1,4 +1,4 @@
-# 企业级 Agent 记忆体系 - 项目宪章
+# EAM 规范 - Enterprise Agent Memory 项目宪章
 
 **版本**：1.0
 **日期**：2026-04-02
@@ -8,7 +8,10 @@
 
 ## 一、概述
 
-本宪章定义了 enterprise-memory 底座的核心约束，是所有工作方法论的基准。
+**EAM 规范**（Enterprise Agent Memory）是企业级 Agent 记忆体系的标准规范，用于：
+- 项目隔离与发现
+- 跨 Agent 记忆共享
+- 统一的项目状态管理
 
 ---
 

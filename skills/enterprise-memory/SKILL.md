@@ -5,11 +5,14 @@
 - **GitHub**: https://github.com/evan-zhang/enterprise-agent-memory
 - **ClawHub**: https://clawhub.com/evan-zhang/enterprise-memory
 - **问题反馈**: https://github.com/evan-zhang/enterprise-agent-memory/issues
+- **规范名称**: EAM 规范 (Enterprise Agent Memory)
 
 ## 触发词
 
 ```
-/切换项目 <关键词>
+EAM                          ← 识别 EAM 规范
+企业级记忆                  ← 识别 EAM 规范
+/e切换项目 <关键词>
 /新建项目 <项目名>
 /项目列表
 /项目搜索 <关键词>
@@ -17,9 +20,9 @@
 
 ## 描述
 
-企业级 Agent 记忆体系 Skill（Phase 1）。
+**EAM 规范**（Enterprise Agent Memory）企业级 Agent 记忆体系 Skill。
 
-当用户提到以下内容时自动加载：全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、记住项目、跨项目共享、全局记忆层。
+当用户提到以下内容时自动加载：EAM、企业级记忆、全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、记住项目、跨项目共享、全局记忆层。
 
 核心路径：`~/.openclaw/EAM-projects/` 是所有全局项目的存储位置。
 
