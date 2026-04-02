@@ -193,7 +193,7 @@ clawhub install cms-sop
 
 ```bash
 # 默认路径
-export ENTERPRISE_MEMORY_ROOT=~/.openclaw/projects/
+export ENTERPRISE_MEMORY_ROOT=~/.openclaw/EAM-projects/
 
 # 可配置为任意路径
 export ENTERPRISE_MEMORY_ROOT=/your/custom/path/
@@ -201,7 +201,7 @@ export ENTERPRISE_MEMORY_ROOT=/your/custom/path/
 
 **设计原则**：
 - 路径可配置，便于用户自定义
-- 默认使用 `~/.openclaw/projects/`
+- 默认使用 `~/.openclaw/EAM-projects/`
 - 兼容不同部署环境
 
 ---
