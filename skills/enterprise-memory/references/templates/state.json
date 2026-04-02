@@ -1,13 +1,19 @@
 {
-  "_comment": "项目状态模板 - Phase 1",
+  "_comment": "项目状态模板 - EAM 规范",
   "id": "{{PROJECT_ID}}",
-  "name": "{{PROJECT_NAME}}",
+  "title": "{{PROJECT_NAME}}",
+  "mode": "full",
+  "owner": "{{OWNER}}",
   "status": "DISCUSSING",
   "stage": "TARGET",
   "createdAt": "{{CREATED_AT}}",
   "updatedAt": "{{CREATED_AT}}",
-  "updateCount": 0,
-  "lastIndexSync": null,
+  "deadline": "",
+  "reason": "",
+  "blockedReason": "",
+  "checklistConfirmed": false,
+  "confirmCount": 0,
+  "upgradedFrom": "",
   "resume": {
     "lastCompleted": "",
     "currentBlocked": "",
@@ -15,8 +21,8 @@
     "nextAction": ""
   },
   "meta": {
+    "methodology": "cms-sop",
     "description": "",
-    "tags": [],
-    "owner": ""
+    "tags": []
   }
 }

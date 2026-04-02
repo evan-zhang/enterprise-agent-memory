@@ -12,7 +12,7 @@
 - ✅ CHECKLIST：四个关键决策已确认
 - 🔄 EXECUTE：Phase 1 代码实现完成
 - ⏳ TEST：真实项目测试
-- ⏳ RELEASE：发布到 ClawHub
+- ✅ DONE：发布到 ClawHub（v1.0.0, v1.1.0）
 
 **设计文档**：
 - [设计总结](docs/DESIGN-SUMMARY.md) - 1 页纸快速了解
@@ -101,9 +101,11 @@ enterprise-agent-memory/
 
 1. **CHECKLIST 阶段**：确认是否执行、执行范围
 2. **EXECUTE 阶段**：实现三个核心脚本
-   - `update_project_index.py`
-   - `switch_project.py`
-   - `compress_snapshot.py`
+   - `update_index.py`（索引同步）
+   - `switch_project.py`（项目切换）
+   - `compress.py`（快照压缩）
+   - `fix_projects.py`（批量修复项目）
+   - `fix_projects_v2.py`（修复脚本 v2）
 3. **TEST 阶段**：2 周压力测试
 4. **RELEASE 阶段**：发布到 ClawHub
 

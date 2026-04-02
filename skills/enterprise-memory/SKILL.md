@@ -3,7 +3,7 @@
 ## 项目信息
 
 - **GitHub**: https://github.com/evan-zhang/enterprise-agent-memory
-- **ClawHub**: https://clawhub.com/evan-zhang/enterprise-memory
+- **ClawHub**: https://clawhub.ai/evan-zhang/enterprise-memory
 - **问题反馈**: https://github.com/evan-zhang/enterprise-agent-memory/issues
 - **规范名称**: EAM 规范 (Enterprise Agent Memory)
 
@@ -12,7 +12,7 @@
 ```
 EAM                          ← 识别 EAM 规范
 企业级记忆                  ← 识别 EAM 规范
-/e切换项目 <关键词>
+/切换项目 <关键词>
 /新建项目 <项目名>
 /项目列表
 /项目搜索 <关键词>
@@ -106,7 +106,7 @@ SYSTEM_PROMPT = """
 ```
 ~/.openclaw/EAM-projects/
 ├── GLOBAL-INDEX.md              # 全局项目索引
-├── CHARTER.md                  # 项目宪章（约束定义）
+├── CHARTER.md                  # 项目宪章（约束定义，位于项目根目录）
 ├── current-project.json        # 当前项目指针
 ├── SOP-{日期}-{序号}-{名称}/   # 项目目录
 │   ├── state.json             # 项目状态
@@ -163,6 +163,19 @@ python skills/enterprise-memory/scripts/compress.py --snapshot <snapshot_dir> --
 - 完善的错误处理和日志
 - 每个脚本支持 `--dry-run`
 - 导入路径：相对于项目根目录
+
+---
+
+## 安全警告
+
+**LLM 压缩数据外泄风险**
+
+`compress.py` 支持可选的 LLM 压缩功能。如果启用：
+- 会将项目内容 POST 到指定的 API 端点
+- 项目数据会传输到外部服务器
+- 请确认 API 端点可信后再启用
+
+建议在生产环境中谨慎使用此功能。
 
 ---
 
