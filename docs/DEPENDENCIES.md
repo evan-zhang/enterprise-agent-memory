@@ -19,17 +19,18 @@
 
 **安装方法**：
 ```bash
-# CMS SOP 是本地 Skill，位于：
-~/.openclaw/workspace-life/skills/cms-sop/
+# 从 ClawHub 安装 CMS SOP
+clawhub install cms-sop
 
 # 使用方式：在对话中触发
 "新建 SOP" / "创建任务" / "SOP" / "快速任务" / "完整 SOP"
 ```
 
-**相关文件**：
-- Skill 定义：`~/.openclaw/workspace-life/skills/cms-sop/SKILL.md`
-- 脚本目录：`~/.openclaw/workspace-life/skills/cms-sop/scripts/`
-- 参考文档：`~/.openclaw/workspace-life/skills/cms-sop/references/`
+**ClawHub**：
+- https://clawhub.ai/evan-zhang/cms-sop
+
+**相关链接**：
+- ClawHub：https://clawhub.ai/evan-zhang/cms-sop
 
 ---
 
@@ -108,4 +109,4 @@ clawhub list
 
 ---
 
-*最后更新：2026-03-31*
+*最后更新：2026-04-02*
