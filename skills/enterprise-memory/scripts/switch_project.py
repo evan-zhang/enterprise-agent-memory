@@ -49,7 +49,7 @@ log = logging.getLogger("switch_project")
 
 # ── 常量 ─────────────────────────────────────────────────────────────────────
 
-PROJECTS_ROOT = Path.home() / "projects"
+PROJECTS_ROOT = Path.home() / ".openclaw" / "EAM-projects"
 GLOBAL_INDEX = PROJECTS_ROOT / "GLOBAL-INDEX.md"
 CURRENT_POINTER = PROJECTS_ROOT / "current-project.json"
 ARCHIVE_DIR = PROJECTS_ROOT / "archive"
