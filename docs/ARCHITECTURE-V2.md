@@ -52,7 +52,11 @@ enterprise-memory 采用"**可插拔的工作方法论系统**"：
 │  └─────────────────────────────────┘   │
 │                                         │
 │  ┌─────────────────────────────────┐   │
-│  │    适配层（Adapter）           │   │  ← 方法论集成接口
+│  │    约束定义层                   │   │  ← 约束文档（定义需要什么）
+│  └─────────────────────────────────┘   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │    AI 适配层                    │   │  ← LLM 理解 + 生成
 │  └─────────────────────────────────┘   │
 │                                         │
 │  ┌─────────────────────────────────┐   │
@@ -64,50 +68,93 @@ enterprise-memory 采用"**可插拔的工作方法论系统**"：
 
 ---
 
-## 四、方法论适配层
+## 四、核心设计：AI 适配 + 代码校验
 
-### 4.1 核心概念
+### 4.1 核心思路
 
-适配层（Adapter）是将外部方法论集成到 enterprise-memory 的桥梁：
+底座定义约束 + 方法论定义语义 + LLM 自动桥接
 
-- **单向集成**：方法论更新不影响适配层
-- **独立维护**：方法论保持独立
-- **即插即用**：新方法论只需写适配层
+```
+用户请求 → LLM 理解约束 → 生成结构化文件 → 代码校验 → 成功/失败
+```
 
-### 4.2 CMS SOP 适配
+### 4.2 分工原则
 
-CMS SOP 是一个独立 Skill，可以：
-- 独立于 enterprise-memory 使用
-- 通过适配层集成到 enterprise-memory
+| 分工 | 负责 |
+|------|------|
+| **理解语义** | LLM |
+| **生成文件** | LLM |
+| **格式校验** | 代码 |
+| **冲突处理** | prompt + warn |
 
-**适配内容**：
+### 4.3 不需要的
 
-| 适配项 | 说明 |
-|--------|------|
-| **存储路径** | CMS SOP 的 `sop-instances/` → `~/projects/` |
-| **state.json 格式** | 映射到统一格式 |
-| **触发词** | 让 CMS SOP 指令能触发 enterprise-memory |
-| **索引格式** | 统一 INDEX.md 格式 |
+- ❌ 复杂的适配层代码
+- ❌ 版本精确匹配
+- ❌ 自动降级逻辑
 
-### 4.3 外部方法论扩展
+### 4.4 需要的
 
-将来可以集成其他工作方法论：
-- 只需开发适配层代码
-- 方法论本身无需修改
-- 不影响 enterprise-memory 核心
+- ✅ 清晰的约束文档
+- ✅ 关键字段校验
+- ✅ LLM 生成能力
 
 ---
 
-## 五、与其他 Skill 的关系
+## 五、方法论适配层
 
-### 5.1 依赖的 Skill
+### 5.1 适配方式：AI 适配 + 代码校验
+
+**核心思路**：约束 + 校验 + AI 生成
+
+### 5.2 约束分层
+
+```markdown
+## 硬约束（必须校验）
+- id 格式：SOP-{日期}-{序号}-{名称}
+- status 枚举：DISCUSSING | RUNNING | PAUSED | BLOCKED | DONE
+- stage 枚举：TARGET | PLAN | CHECKLIST | EXECUTE | ARCHIVE | DONE
+
+## 软约束（AI 理解）
+- stage 推荐值：TARGET | PLAN | CHECKLIST | EXECUTE | ARCHIVE | DONE
+- 语义映射：DISCUSSING → IDLE
+```
+
+### 5.3 Prompt 模板
+
+```python
+SYSTEM_PROMPT = """
+你是 {methodology_name} 方法论的适配层。
+底座要求：{constraints}
+方法论语义：{semantics}
+
+生成符合底座约束的 {output_format}。
+"""
+```
+
+### 5.4 输出校验层
+
+```python
+def validate(output, schema):
+    """关键字段代码校验，非关键字段提示"""
+    for field in schema.required:
+        if not validate_format(output[field], schema[field]):
+            raise ValidationError(f"字段 {field} 格式错误")
+    # 非关键字段可以 warn 但不阻断
+```
+
+---
+
+## 六、与其他 Skill 的关系
+
+### 6.1 依赖的 Skill
 
 | Skill | 关系 | 说明 |
 |-------|------|------|
 | **cms-sop** | 可选依赖 | 推荐的工作方法论 |
 | **cas-chat-archive** | 可选依赖 | 会话级归档 |
 
-### 5.2 独立性
+### 6.2 独立性
 
 - **enterprise-memory 不强制依赖任何 Skill**
 - 所有依赖都是可选的
@@ -115,9 +162,9 @@ CMS SOP 是一个独立 Skill，可以：
 
 ---
 
-## 六、安装与配置
+## 七、安装与配置
 
-### 6.1 安装方式
+### 7.1 安装方式
 
 ```bash
 # 安装主框架
@@ -127,7 +174,7 @@ clawhub install enterprise-memory
 clawhub install cms-sop
 ```
 
-### 6.2 目录结构
+### 7.2 目录结构
 
 ```
 ~/.openclaw/
@@ -140,7 +187,7 @@ clawhub install cms-sop
     └── enterprise-memory/     ← 主框架
 ```
 
-### 6.3 路径配置
+### 7.3 路径配置
 
 项目目录路径可通过环境变量或配置文件修改：
 
@@ -159,25 +206,27 @@ export ENTERPRISE_MEMORY_ROOT=/your/custom/path/
 
 ---
 
-## 七、与 CMS SOP 的集成
+## 八、与 CMS SOP 的集成
 
-### 7.1 集成方式
+### 8.1 集成方式
 
-CMS SOP 通过适配层集成到 enterprise-memory：
+CMS SOP 通过 AI 适配层集成到 enterprise-memory：
 
 ```
 用户："用 SOP 方法创建项目"
      ↓
 enterprise-memory 接收请求
      ↓
-调用 CMS SOP 适配层
+LLM 理解 CMS SOP 语义
      ↓
-CMS SOP 在项目目录中创建 SOP 结构
+LLM 生成符合 enterprise-memory 约束的 state.json
+     ↓
+代码校验关键字段
      ↓
 更新 GLOBAL-INDEX.md
 ```
 
-### 7.2 文件映射
+### 8.2 文件映射
 
 | CMS SOP 文件 | enterprise-memory 文件 |
 |-------------|----------------------|
@@ -187,98 +236,50 @@ CMS SOP 在项目目录中创建 SOP 结构
 
 ---
 
-## 八、设计原则
+## 九、设计原则
 
 1. **最小化核心**：enterprise-memory 核心保持最小
 2. **方法论独立**：工作方法论不依赖 enterprise-memory
-3. **适配层隔离**：方法论更新不影响核心
-4. **即插即用**：新方法论易于集成
+3. **AI 适配优先**：能通过 LLM 理解的就不写代码
+4. **代码校验兜底**：关键字段必须校验
 5. **向后兼容**：不影响现有单独使用的 Skill
 
 ---
 
-## 九、待确认问题
+## 十、版本协调机制
 
-- [x] 适配层的技术实现方案
-- [x] CMS SOP 适配层的具体接口
-- [ ] 版本协调机制
-- [x] 配置管理方式
+### 10.1 简化方案：SemVer + 接口协议 + 单适配层
+
+- enterprise-memory 声明接口协议版本
+- cms-sop 声明实现的协议版本
+- 一个适配层覆盖多个方法论版本
+- **启动时校验 > 自动降级**（失败要明确）
+
+### 10.2 版本声明格式
+
+```markdown
+## 底座版本声明
+底座版本: 1.0
+约束格式版本: 1.0
+
+## 方法论版本声明
+方法论: cms-sop
+版本: 1.0
+语义版本: 1.0
+```
+
+### 10.3 风险缓解
+
+| 风险 | 缓解措施 |
+|------|----------|
+| AI 理解不稳定 | 提供清晰约束 + few-shot 示例 |
+| 关键操作缺乏校验 | 代码校验关键字段 |
+| 多方法论冲突 | prompt 中明确优先级 |
+| 输出不一致 | 约束具体化 + 输出后自动校验 |
 
 ---
 
-## 十、适配层接口设计
-
-### 10.1 适配层职责
-
-适配层负责：
-1. **路径映射**：将方法论的存储路径映射到 enterprise-memory 的项目目录
-2. **格式转换**：将方法论的状态格式转换为统一格式
-3. **索引同步**：确保方法论的文件变更能同步到 GLOBAL-INDEX.md
-
-### 10.2 适配层接口
-
-每个适配层需要实现以下接口：
-
-```python
-class MethodAdapter:
-    def __init__(self, projects_root: str):
-        self.projects_root = projects_root
-    
-    def create_project(self, name: str, method: str) -> dict:
-        """创建项目，返回项目路径"""
-        pass
-    
-    def sync_index(self, project_id: str) -> bool:
-        """同步项目索引到 GLOBAL-INDEX.md"""
-        pass
-    
-    def get_project_state(self, project_id: str) -> dict:
-        """获取项目状态"""
-        pass
-    
-    def update_project_state(self, project_id: str, state: dict) -> bool:
-        """更新项目状态"""
-        pass
-```
-
-### 10.3 CMS SOP 适配层实现
-
-```python
-class CMSSOPAdapter(MethodAdapter):
-    """CMS SOP 方法论适配层"""
-    
-    def create_project(self, name: str, method: str = "cms-sop") -> dict:
-        """创建项目时，自动应用 CMS SOP 结构"""
-        # 1. 在 projects_root 创建项目目录
-        # 2. 初始化 state.json（统一格式）
-        # 3. 初始化 TASK.md, LOG.md 等
-        pass
-    
-    def sync_index(self, project_id: str) -> bool:
-        """同步 CMS SOP 文件到 GLOBAL-INDEX.md"""
-        # 读取 state.json
-        # 映射到统一格式
-        # 更新 GLOBAL-INDEX.md
-        pass
-```
-
-### 10.4 触发词设计
-
-| 触发词 | 作用域 | 说明 |
-|--------|---------|------|
-| `enterprise-memory:创建项目` | 全局 | 通过 enterprise-memory 创建 |
-| `sop:创建项目` | cms-sop | 直接调用 cms-sop |
-| `全局项目列表` | enterprise-memory | 列出所有项目 |
-| `sop:项目列表` | cms-sop | 列出 SOP 项目 |
-
-**设计原则**：
-- 前缀区分作用域（如 `enterprise-memory:` 或 `sop:`）
-- 避免与 cms-sop 原生触发词冲突
-- 支持在 enterprise-memory 中直接调用 cms-sop 能力
-
----
-
-## 十、相关文档
+## 十一、相关文档
 
 - [ARCHITECTURE-DECISION.md](ARCHITECTURE-DECISION.md) - 架构决策记录
 - [METHODOLOGY.md](METHODOLOGY.md) - 方法论定义
