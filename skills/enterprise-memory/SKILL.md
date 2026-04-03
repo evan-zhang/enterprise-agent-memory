@@ -1,3 +1,15 @@
+---
+name: enterprise-memory
+version: 1.2.1
+description: EAM 规范（Enterprise Agent Memory）企业级 Agent 记忆体系。当用户提到 EAM、企业级记忆、全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、跨项目共享、全局记忆层时自动加载。提供项目级隔离、状态同步、快照压缩能力。
+metadata:
+  openclaw:
+    requires:
+      bins: [python3]
+      python: ">=3.10"
+homepage: https://github.com/evan-zhang/enterprise-agent-memory
+---
+
 # SKILL.md — enterprise-memory
 
 ## 项目信息
