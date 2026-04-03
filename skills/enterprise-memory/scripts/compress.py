@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 compress.py — 快照压缩脚本
 
@@ -13,6 +14,7 @@ compress.py — 快照压缩脚本
 
 压缩比目标: 原始内容 → 压缩后（启发式 ~50%，LLM ~80%）
 """
+
 
 import argparse
 import hashlib
