@@ -11,22 +11,30 @@
 
 ```
 EAM                          ← 识别 EAM 规范
-企业级记忆                  ← 识别 EAM 规范
+企业级记忆                   ← 识别 EAM 规范
 /切换项目 <关键词>
 /新建项目 <项目名>
 /项目列表
 /项目搜索 <关键词>
+SOP                          ← 识别 SOP 流程
+新建SOP                      ← 创建 SOP 实例
+创建任务                     ← 创建 SOP 实例
+快速任务                     ← SOP Lite 模式
+完整SOP                      ← SOP Full 模式
+SOP Lite / SOP Full         ← 模式选择
+任务交接                     ← SOP 交接流程
+升级任务                     ← SOP Lite→Full 升级
 ```
 
 ## 描述
 
-**EAM 规范**（Enterprise Agent Memory）企业级 Agent 记忆体系 Skill。
+**EAM 规范**（Enterprise Agent Memory）企业级 Agent 记忆体系 Skill，内置 SOP 执行流程能力。
 
-当用户提到以下内容时自动加载：EAM、企业级记忆、全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、记住项目、跨项目共享、全局记忆层。
+当用户提到以下内容时自动加载：EAM、企业级记忆、全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、记住项目、跨项目共享、全局记忆层、SOP、新建SOP、创建任务、快速任务、完整SOP、任务交接、升级任务。
 
 核心路径：`~/.openclaw/EAM-projects/` 是所有全局项目的存储位置。
 
-提供项目级隔离、状态同步、快照压缩能力。
+提供项目级隔离、状态同步、快照压缩能力，以及 SOP 流程管理（确认门禁、多轮确认、Lite/Full 模式、任务交接、模式升级）。
 
 ---
 
@@ -59,9 +67,10 @@ SYSTEM_PROMPT = """
 ## 底座约束（HARD，必须符合）
 - id 格式：SOP-{日期}-{序号}-{名称}
   示例：SOP-20260402-01-HarnessEngineering
-- status 枚举：DISCUSSING | READY | RUNNING | PAUSED | BLOCKED | DONE
+- status 枚举：DISCUSSING | READY | RUNNING | REVIEWING | WAITING_USER | PAUSED | BLOCKED | ON_HOLD | CANCELLED | DONE | ARCHIVED | HANDOVER_PENDING | UPGRADED
 - stage 枚举：TARGET | PLAN | CHECKLIST | EXECUTE | ARCHIVE | DONE
 - mode：lite | full
+- source：sop | manual | import
 
 ## 软约束（LLM 理解）
 - title：1-100 字符的项目标题
@@ -78,14 +87,21 @@ SYSTEM_PROMPT = """
 
 ### 3. 字段映射
 
-| state.json status | 底座值 | CMS SOP 语义 |
-|------------------|--------|-------------|
-| DISCUSSING | DISCUSSING | 讨论中 |
-| READY | READY | 已确认 |
-| RUNNING | RUNNING | 执行中 |
-| PAUSED | PAUSED | 已暂停 |
-| BLOCKED | BLOCKED | 被阻塞 |
-| DONE | DONE | 已完成 |
+| state.json status | 底座值 | INDEX.md 值 | 语义 |
+|------------------|--------|------------|------|
+| DISCUSSING | DISCUSSING | IDLE | 讨论中 |
+| READY | READY | READY | 已确认 |
+| RUNNING | RUNNING | RUNNING | 执行中 |
+| REVIEWING | REVIEWING | REVIEWING | 复核中 |
+| WAITING_USER | WAITING_USER | WAITING | 等待用户 |
+| PAUSED | PAUSED | PAUSED | 已暂停 |
+| BLOCKED | BLOCKED | BLOCKED | 被阻塞 |
+| ON_HOLD | ON_HOLD | ON_HOLD | 搁置 |
+| CANCELLED | CANCELLED | CANCELLED | 已取消 |
+| DONE | DONE | DONE | 已完成 |
+| ARCHIVED | ARCHIVED | ARCHIVED | 已归档 |
+| HANDOVER_PENDING | HANDOVER_PENDING | HANDOVER | 交接中 |
+| UPGRADED | UPGRADED | UPGRADED | 已升级 |
 
 ### 4. 校验层
 
@@ -106,63 +122,115 @@ SYSTEM_PROMPT = """
 ```
 ~/.openclaw/EAM-projects/
 ├── GLOBAL-INDEX.md              # 全局项目索引
-├── CHARTER.md                  # 项目宪章（约束定义，位于项目根目录）
-├── current-project.json        # 当前项目指针
-├── SOP-{日期}-{序号}-{名称}/   # 项目目录
-│   ├── state.json             # 项目状态
-│   ├── INDEX.md               # 项目索引
-│   ├── TASK.md               # 任务定义
-│   ├── LOG.md                # 执行日志
-│   ├── DECISIONS.md         # 决策记录
-│   └── snapshot/             # 快照目录
-└── archive/                  # 归档目录
+├── CHARTER.md                   # 项目宪章（约束定义）
+├── current-project.json         # 当前项目指针
+├── SOP-{日期}-{序号}-{名称}/    # 项目目录
+│   ├── state.json              # 项目状态（含 SOP 扩展字段）
+│   ├── INDEX.md                # 项目索引
+│   ├── TASK.md                 # 任务定义
+│   ├── LOG.md                  # 执行日志
+│   ├── RESULT.md               # 结果留痕（Lite/Full）
+│   ├── HANDOVER.md             # 交接文档（Lite/Full）
+│   ├── PLAN.md                 # 执行计划（仅 Full）
+│   ├── DECISIONS.md            # 决策记录（仅 Full）
+│   ├── ARTIFACTS.md            # 产物清单（仅 Full）
+│   └── snapshot/               # 快照目录
+└── archive/                    # 归档目录
 ```
 
 ---
 
 ## 命令参考
 
-### 项目创建
+### 项目创建（EAM 底座）
 ```bash
-python skills/enterprise-memory/scripts/switch_project.py --new --name <项目名> --description <描述>
+python scripts/switch_project.py --new --name <项目名> --description <描述>
 ```
 
-### 项目切换
+### SOP 实例创建
+```bash
+# Lite 模式（四件套）
+python scripts/sop_init.py --title "任务标题" --mode lite --owner <负责人>
+
+# Full 模式（七件套）
+python scripts/sop_init.py --title "任务标题" --mode full --owner <负责人> --description "描述"
+
+# 预览模式
+python scripts/sop_init.py --title "任务标题" --mode lite --owner <负责人> --dry-run
+```
+
+### SOP 状态管理
+```bash
+# 直接设置状态
+python scripts/sop_state.py --instance-path <path> --status RUNNING
+
+# 语义化操作
+python scripts/sop_state.py --instance-path <path> --action pause --reason "等反馈"
+python scripts/sop_state.py --instance-path <path> --action resume
+python scripts/sop_state.py --instance-path <path> --action shelve --reason "优先级降低"
+python scripts/sop_state.py --instance-path <path> --action restart
+python scripts/sop_state.py --instance-path <path> --action wait-user --waiting-for "确认部署"
+python scripts/sop_state.py --instance-path <path> --action reviewed
+
+# 多轮确认计数
+python scripts/sop_state.py --instance-path <path> --action increment-confirm
+
+# 高风险操作（需 --confirm）
+python scripts/sop_state.py --instance-path <path> --status DONE --confirm
+python scripts/sop_state.py --instance-path <path> --status ARCHIVED --confirm
+python scripts/sop_state.py --instance-path <path> --owner <new_owner> --confirm
+```
+
+### SOP 交接
+```bash
+python scripts/sop_handover.py --instance-path <path> \
+    --from-owner <当前负责人> --to-owner <新负责人> \
+    --reason "交接原因" --next-steps "后续步骤"
+```
+
+### SOP 升级（Lite → Full）
+```bash
+python scripts/sop_upgrade.py --instance-path <path> --reason "升级原因"
+```
+
+### 项目切换（EAM 底座）
 ```bash
 # 切出
-python skills/enterprise-memory/scripts/switch_project.py --exit --project-dir <path>
+python scripts/switch_project.py --exit --project-dir <path>
 
 # 切入
-python skills/enterprise-memory/scripts/switch_project.py --enter --keyword <关键词>
+python scripts/switch_project.py --enter --keyword <关键词>
 
-# 列表
-python skills/enterprise-memory/scripts/switch_project.py --list
+# 列表（支持 source 过滤）
+python scripts/switch_project.py --list
+python scripts/switch_project.py --list --source sop
 
 # 搜索
-python skills/enterprise-memory/scripts/switch_project.py --search <关键词>
+python scripts/switch_project.py --search <关键词>
 ```
 
 ### INDEX 同步
 ```bash
-python skills/enterprise-memory/scripts/update_index.py --project-dir <path>
-python skills/enterprise-memory/scripts/update_index.py --project-dir <path> --dry-run
+python scripts/update_index.py --project-dir <path>
+python scripts/update_index.py --project-dir <path> --dry-run
 ```
 
 ### 快照压缩
 ```bash
-python skills/enterprise-memory/scripts/compress.py --snapshot <snapshot_dir>
-python skills/enterprise-memory/scripts/compress.py --snapshot <snapshot_dir> --dry-run
+python scripts/compress.py --snapshot <snapshot_dir>
+python scripts/compress.py --snapshot <snapshot_dir> --dry-run
 ```
 
 ---
 
 ## 实现要求
 
-- Python 3.10+
+- Python 3.9+（使用 `from __future__ import annotations`）
 - 所有写入使用原子操作（临时文件 → 校验 → rename）
 - 完善的错误处理和日志
 - 每个脚本支持 `--dry-run`
 - 导入路径：相对于项目根目录
+- 向后兼容：旧项目无 SOP 字段不影响
 
 ---
 
@@ -179,7 +247,50 @@ python skills/enterprise-memory/scripts/compress.py --snapshot <snapshot_dir> --
 
 ---
 
+## 目录结构
+
+```
+enterprise-memory/
+├── scripts/
+│   ├── switch_project.py      # EAM 底座：项目切换/创建
+│   ├── update_index.py        # EAM 底座：INDEX 同步
+│   ├── compress.py            # EAM 底座：快照压缩
+│   ├── __init__.py
+│   ├── sop_init.py            # SOP: 实例初始化
+│   ├── sop_state.py           # SOP: 状态管理
+│   ├── sop_handover.py        # SOP: 任务交接
+│   └── sop_upgrade.py         # SOP: Lite→Full 升级
+├── references/
+│   ├── sop-lite-guide.md      # SOP Lite 使用指南
+│   ├── sop-full-guide.md      # SOP Full 使用指南
+│   ├── shared/
+│   │   ├── state-machine.md   # 状态机定义
+│   │   ├── confirm-protocol.md # 确认协议
+│   │   └── upgrade-rules.md   # 升级规则
+│   └── templates/
+│       ├── lite/
+│       │   ├── TASK-template.md
+│       │   ├── LOG-template.md
+│       │   ├── RESULT-template.md
+│       │   └── HANDOVER-template.md
+│       └── full/
+│           ├── PLAN-template.md
+│           ├── DECISIONS-template.md
+│           └── ARTIFACTS-template.md
+├── SKILL.md
+├── CHARTER.md
+└── docs/
+```
+
+---
+
 ## 版本
 
 - Phase 1: 2026-03-31
 - Phase 1.1: 2026-04-02（AI 适配方案）
+- **v2.0: 2026-04-02（吸收 CMS-SOP，统一 SOP 能力）**
+  - 统一 state.json schema（EAM + SOP 扩展字段）
+  - 新增 4 个 SOP 脚本（sop_init / sop_state / sop_handover / sop_upgrade）
+  - 扩展 STATUS_MAP（13 个状态）
+  - 迁移模板和参考文档
+  - Python 3.9+ 兼容

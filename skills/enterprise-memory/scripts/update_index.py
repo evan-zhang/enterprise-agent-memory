@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 update_index.py — 将 state.json 同步到 INDEX.md
 
@@ -23,6 +24,7 @@ update_index.py — 将 state.json 同步到 INDEX.md
 依赖:
     Python 3.10+, 标准库 (json, pathlib, shutil, datetime)
 """
+
 
 import argparse
 import json
@@ -49,10 +51,16 @@ STATUS_MAP = {
     "DISCUSSING": "IDLE",
     "READY": "READY",
     "RUNNING": "RUNNING",
+    "REVIEWING": "REVIEWING",
+    "WAITING_USER": "WAITING",
     "PAUSED": "PAUSED",
     "BLOCKED": "BLOCKED",
-    "WAITING_USER": "WAITING",
+    "ON_HOLD": "ON_HOLD",
+    "CANCELLED": "CANCELLED",
     "DONE": "DONE",
+    "ARCHIVED": "ARCHIVED",
+    "HANDOVER_PENDING": "HANDOVER",
+    "UPGRADED": "UPGRADED",
 }
 
 

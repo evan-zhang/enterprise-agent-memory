@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 switch_project.py — 项目切换脚本（切出 + 切入）
 
@@ -26,6 +27,7 @@ switch_project.py — 项目切换脚本（切出 + 切入）
 
 全局记忆层位置: ~/projects/
 """
+
 
 import argparse
 import json
@@ -143,7 +145,7 @@ def create_snapshot(project_dir: Path, dry_run: bool = False) -> Path | None:
 
 # ── 搜索 ─────────────────────────────────────────────────────────────────────
 
-def search_projects(keyword: str) -> list[dict]:
+def search_projects(keyword: str, source: str | None = None) -> list[dict]:
     """按 ID 或名称模糊搜索项目。"""
     results = []
     if not PROJECTS_ROOT.exists():
@@ -160,10 +162,14 @@ def search_projects(keyword: str) -> list[dict]:
         if not state:
             continue
 
+        # source 过滤
+        if source and state.get("source") != source:
+            continue
+
         proj_id = state.get("id", proj_dir.name)
         proj_name = state.get("name", "")
 
-        if (kw in proj_id.lower()) or (kw in proj_name.lower()):
+        if not kw or (kw in proj_id.lower()) or (kw in proj_name.lower()):
             results.append({
                 "id": proj_id,
                 "name": proj_name,
@@ -176,9 +182,9 @@ def search_projects(keyword: str) -> list[dict]:
     return results
 
 
-def list_projects() -> list[dict]:
+def list_projects(source: str | None = None) -> list[dict]:
     """列出所有项目。"""
-    return search_projects("")
+    return search_projects("", source=source)
 
 
 # ── 切出 ─────────────────────────────────────────────────────────────────────
@@ -331,6 +337,17 @@ def new_project(name: str, description: str = "", dry_run: bool = False) -> Path
                 "decisions": [],
                 "blocked": "",
             },
+            # ── SOP 扩展字段 ──
+            "source": "manual",
+            "mode": "lite",
+            "owner": "",
+            "title": name,
+            "deadline": "",
+            "reason": "",
+            "checklistConfirmed": False,
+            "confirmCount": 0,
+            "upgradedFrom": "",
+            "sopFiles": {"lite": [], "full": []},
         }
         save_state(project_dir, state)
 
@@ -415,6 +432,7 @@ def parse_args():
     parser.add_argument("--name", type=str, help="项目名称（新建时）")
     parser.add_argument("--description", type=str, default="", help="项目描述（新建时）")
     parser.add_argument("--project-dir", type=Path, help="项目目录（切出时）")
+    parser.add_argument("--source", type=str, help="按来源过滤（sop/manual/import）")
     parser.add_argument("--dry-run", action="store_true", help="仅打印，不写入")
     return parser.parse_args()
 
@@ -424,7 +442,7 @@ def main():
     ensure_dirs()
 
     if args.list:
-        projects = list_projects()
+        projects = list_projects(source=getattr(args, "source", None))
         if not projects:
             log.info("暂无项目")
         else:
