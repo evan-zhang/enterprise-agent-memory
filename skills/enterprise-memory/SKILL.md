@@ -306,3 +306,103 @@ enterprise-memory/
   - 扩展 STATUS_MAP（13 个状态）
   - 迁移模板和参考文档
   - Python 3.9+ 兼容
+
+---
+
+## Web 搜索与数据抓取能力
+
+### 触发词
+
+```
+联网搜索                    ← 触发 web_search
+读取网页                    ← 触发 jina.ai
+抓取数据                   ← 触发 Firecrawl
+浏览器操作                 ← 触发 agent-browser
+```
+
+### 数据抓取工具矩阵
+
+| 工具 | 用途 | 成本 | 使用方式 |
+|------|------|------|----------|
+| **jina.ai** | 读取任意网页 | 免费 | `curl -s "https://r.jina.ai/[URL]"` |
+| **agent-reach** | 搜索14个平台 | 免费 | Skill 触发词 |
+| **agent-browser** | 浏览器自动化 | 免费 | Skill 触发词 |
+| **Firecrawl** | 数据提取/RAG | 免费500积分起 | API 调用 |
+
+### 工具选择决策树
+
+```
+收到任务
+│
+├─ 封闭平台/头条/微信？
+│   └─ → jina.ai（curl）
+│
+├─ 社交媒体搜索？（推特/Reddit/微博）
+│   └─ → agent-reach
+│
+├─ 需要填表/登录/复杂交互？
+│   └─ → agent-browser
+│
+├─ 批量数据提取/RAG？
+│   └─ → Firecrawl
+│
+└─ 简单读取网页？
+    └─ → jina.ai
+```
+
+### 快速使用
+
+#### 1. jina.ai（首选，最快）
+
+```bash
+curl -s "https://r.jina.ai/[URL]"
+```
+
+示例：
+```bash
+curl -s "https://r.jina.ai/https://toutiao.com/article/12345"
+```
+
+#### 2. agent-reach（平台搜索）
+
+触发词示例：
+- "搜一下最近的AI新闻"
+- "搜索推特上的xxx"
+- "读取这个GitHub仓库"
+
+#### 3. agent-browser（复杂交互）
+
+触发词示例：
+- "帮我登录这个网站"
+- "填表并提交"
+- "截图这个页面"
+
+#### 4. Firecrawl（专业数据提取）
+
+```python
+from firecrawl import Firecrawl
+app = Firecrawl(api_key='your-key')
+data = app.scrape(url='https://example.com')
+```
+
+### 医疗/医药研究场景
+
+| 需求 | 推荐工具 |
+|------|---------|
+| 靶点搜索 | agent-reach + jina.ai |
+| 专利分析 | jina.ai + Firecrawl |
+| 文献调研 | jina.ai + Tavily |
+| 社交媒体讨论 | agent-reach |
+
+### Browser-Gateway 架构
+
+对于需要登录的收费网站，可部署 Browser-Gateway：
+
+```
+用户 → OpenClaw Agent → Playwright MCP → Chrome（已登录）→ 收费网站
+```
+
+特点：
+- Mac Mini 独占登录
+- 单一会话管理
+- 排队队列处理并发
