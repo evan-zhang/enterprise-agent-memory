@@ -1,6 +1,14 @@
 ---
 name: skill-tool-registry
-description: 工具自动注册系统。当安装新 skill 时，用这个来注册工具到 TOOLS.md 并创建生命周期文件。其他 Agent 安装新 skill 后也应该运行此脚本。提供 register_tools.py，支持注册（install）和注销（uninstall）两种模式。
+description: Tool auto-registration system for OpenClaw. Automatically registers tools from skill SKILL.md files into TOOLS.md and creates per-tool lifecycle JSON files. Use when: installing a new skill and you want its tools auto-registered; auditing what tools are available across all layers; unregistering tools when a skill is removed. Supports gateway/agent multi-layer scope. Provides discover/list/register/register-all commands.
+tools_provided:
+  - name: register_tools
+    category: system
+    risk_level: medium
+    permission: write
+    description: "Tool registration CLI: discover/list/register/register-all across gateway and agent layers"
+    channels: ALL
+    status: active
 ---
 
 # skill-tool-registry — 工具注册系统
