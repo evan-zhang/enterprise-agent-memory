@@ -62,6 +62,13 @@ updated: 2026-04-04
 - **risk_level**: medium
 - **permission**: write
 - **description**: Tool registration CLI: discover/list/register/register-all across gateway and agent layers
+- **status**: active
+
+### log_tool_exception
+- **category**: system
+- **risk_level**: low
+- **permission**: write
+- **description**: Log tool exceptions to memory/tools-log/YYYY-MM-DD.md
 - **channels**: ALL
 - **status**: active
 

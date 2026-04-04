@@ -34,7 +34,7 @@ AGENT_TOOLS = OPENCLAW_HOME / "workspace" / "TOOLS.md"
 
 def parse_frontmatter(content):
     """Parse tools_provided from SKILL.md frontmatter."""
-    fm_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+    fm_match = re.search(r'^---\n(.*?)\n---', content, re.DOTALL | re.MULTILINE)
     if not fm_match:
         return []
     block = fm_match.group(1)
