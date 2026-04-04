@@ -18,7 +18,7 @@ if not TOOLS_MD.exists():
 
 if not TOOLS_MD.exists():
     raise FileNotFoundError(
-        f"TOOLS.md not found at {Path.home()/.openclaw/workspace/TOOLS.md} or in skill directory. "
+        f"TOOLS.md not found at {Path.home() / '.openclaw' / 'workspace' / 'TOOLS.md'} or in skill directory. "
         "Run: cp TOOLS.md ~/.openclaw/workspace/TOOLS.md"
     )
 
