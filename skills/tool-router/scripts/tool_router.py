@@ -10,6 +10,18 @@ from pathlib import Path
 TOOLS_MD = Path.home() / ".openclaw" / "workspace" / "TOOLS.md"
 TOOLS_DIR = Path.home() / ".openclaw" / "workspace" / "memory" / "tools"
 
+# Fallback: look in skill directory
+if not TOOLS_MD.exists():
+    TOOLS_MD = Path(__file__).parent / ".." / ".." / ".." / "TOOLS.md"
+    if not TOOLS_MD.exists():
+        TOOLS_MD = Path("/etc/placeholder")  # will trigger error below
+
+if not TOOLS_MD.exists():
+    raise FileNotFoundError(
+        f"TOOLS.md not found at {Path.home()/.openclaw/workspace/TOOLS.md} or in skill directory. "
+        "Run: cp TOOLS.md ~/.openclaw/workspace/TOOLS.md"
+    )
+
 # Routing keywords → tool name
 KEYWORD_ROUTES = {
     "web_search": ["搜索", "找一下", "查一下", "最新消息", "search", "google"],
