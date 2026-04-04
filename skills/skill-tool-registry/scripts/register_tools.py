@@ -1,86 +1,86 @@
 #!/usr/bin/env python3
 """
-register_tools.py -- Auto-register tools from skill SKILL.md into TOOLS.md
+register_tools.py -- Tool registration and discovery for OpenClaw agents
 
-Usage:
-  python3 register_tools.py skill-name          # register
-  python3 register_tools.py --unregister skill # unregister
-  python3 register_tools.py --list             # list registered tools
+Multi-layer discovery:
+  ~/.openclaw/skills/         -> Gateway shared skills
+  ~/.openclaw/workspace/skills/ -> Agent private skills
+
+Commands:
+  python3 register_tools.py discover          # Show full deployment topology
+  python3 register_tools.py list              # List all skills at all levels
+  python3 register_tools.py register <skill>  # Register skill's tools (auto-detect scope)
+  python3 register_tools.py register-all      # Register all skills at all levels
+  python3 register_tools.py register --scope gateway <skill>   # Force gateway scope
+  python3 register_tools.py register --scope agent <skill>    # Force agent scope
+  python3 register_tools.py --help            # Show this help
+
+All output is ASCII-safe.
 """
 import json
-import re
+import os
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
 
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
-TOOLS_MD = WORKSPACE / "TOOLS.md"
-TOOLS_DIR = WORKSPACE / "memory" / "tools"
-SKILL_DIR = WORKSPACE / "skills"
+# Layer paths
+OPENCLAW_HOME = Path.home() / ".openclaw"
+GATEWAY_SKILLS = OPENCLAW_HOME / "skills"
+AGENT_SKILLS = OPENCLAW_HOME / "workspace" / "skills"
+GATEWAY_TOOLS = OPENCLAW_HOME / "skills" / "TOOLS.md"
+AGENT_TOOLS = OPENCLAW_HOME / "workspace" / "TOOLS.md"
 
 
 def parse_frontmatter(content):
+    """Parse tools_provided from SKILL.md frontmatter."""
     fm_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
-    if fm_match:
-        block = fm_match.group(1)
-        # Parse tools_provided manually
-        tools = []
-        in_tools = False
-        current = {}
-        for line in block.split('\n'):
-            if line.startswith('tools_provided:'):
-                in_tools = True
-                continue
-            if in_tools:
-                if line.startswith('  - name:'):
-                    if current:
-                        tools.append(current)
-                    current = {'name': line.split('name:')[1].strip()}
-                elif ':' in line and in_tools:
-                    key = line.split(':')[0].strip()
-                    val = ':'.join(line.split(':')[1:]).strip().strip('"').strip("'")
-                    if key in ('category', 'risk_level', 'permission', 'description', 'channels', 'status'):
-                        current[key] = val
-        if current:
-            tools.append(current)
-        return tools
-    return []
-
-
-def parse_tools_md():
-    if not TOOLS_MD.exists():
-        return {}
-    content = TOOLS_MD.read_text(encoding='utf-8')
-    tools = {}
-    current_cat = None
-    for line in content.split('\n'):
-        SKIP_CATS = {'Tool Metadata Schema', 'Tool Lifecycle'}
-        if line.startswith('## '):
-            # Format: "## category -- description"
-            # Skip non-category sections
-            parts = line.lstrip('## ').split('--')
-            current_cat = parts[0].strip()
-            if current_cat not in SKIP_CATS:
-                tools[current_cat] = []
-            else:
-                current_cat = None
-        elif line.startswith('### '):
-            tool_name = line.lstrip('# ').strip()
-            if current_cat:
-                tools[current_cat].append({'name': tool_name, 'category': current_cat,
-                    'risk_level': '', 'permission': '', 'description': '', 'status': 'active'})
+    if not fm_match:
+        return []
+    block = fm_match.group(1)
+    tools = []
+    in_tools = False
+    current = {}
+    for line in block.split('\n'):
+        if line.startswith('tools_provided:'):
+            in_tools = True
+            continue
+        if in_tools:
+            if line.startswith('  - name:'):
+                if current:
+                    tools.append(current)
+                current = {'name': line.split('name:')[1].strip()}
+            elif ':' in line:
+                key = line.split(':')[0].strip()
+                val = ':'.join(line.split(':')[1:]).strip().strip('"').strip("'")
+                if key in ('category', 'risk_level', 'permission', 'description', 'channels', 'status'):
+                    current[key] = val
+    if current:
+        tools.append(current)
     return tools
 
 
-def merge_tool(tools, tool_meta, category):
-    name = tool_meta.get('name', '')
-    if not name:
-        return
-    tools[category] = [t for t in tools.get(category, []) if t.get('name') != name]
-    tools[category].append(tool_meta)
+def read_tools_md(path):
+    """Read TOOLS.md and return list of (category, tool_name, status)."""
+    if not path.exists():
+        return {}
+    content = path.read_text(encoding='utf-8')
+    tools = {}
+    current_cat = None
+    for line in content.split('\n'):
+        if line.startswith('## '):
+            parts = line.lstrip('## ').split('--')[0].strip().split('  ')
+            current_cat = parts[0].strip()
+            tools[current_cat] = []
+        elif line.startswith('### '):
+            name = line.lstrip('### ').strip()
+            if current_cat:
+                tools[current_cat].append({'name': name})
+    return tools
 
 
-def write_tools_md(tools):
+def write_tools_md(path, tools):
+    """Write tools dict to TOOLS.md at given path."""
     cat_names = {
         'search': 'search -- Search Tools',
         'file': 'file -- File Operations',
@@ -92,7 +92,6 @@ def write_tools_md(tools):
     lines = [
         "# TOOLS.md -- Tool Registry",
         "---",
-        f"type: tool-registry",
         f"updated: {datetime.now().strftime('%Y-%m-%d')}",
         "---",
         "",
@@ -101,20 +100,10 @@ def write_tools_md(tools):
         "| Field | Description |",
         "|-------|-------------|",
         "| name | Tool name |",
-        "| category | Category (search/file/exec/network/memory/system) |",
-        "| risk_level | Risk level (low/medium/high/critical) |",
+        "| category | Category |",
+        "| risk_level | Risk (low/medium/high/critical) |",
         "| permission | Permission (read/write/exec/admin) |",
-        "| description | What the tool does |",
-        "| channels | Where it works (Telegram/Discord/Web/ALL) |",
-        "| status | Status (active/deprecated/disabled) |",
-        "",
-        "## Tool Lifecycle",
-        "",
-        "| Status | Description |",
-        "|--------|-------------|",
-        "| active | Available for use |",
-        "| deprecated | Not recommended |",
-        "| disabled | Cannot be used |",
+        "| status | active/deprecated/disabled |",
         "",
     ]
     for cat, cat_tools in tools.items():
@@ -129,19 +118,30 @@ def write_tools_md(tools):
                 if val:
                     lines.append(f"- **{key}**: {val}")
             lines.append("")
-    TOOLS_MD.write_text('\n'.join(lines), encoding='utf-8')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('\n'.join(lines), encoding='utf-8')
 
 
-def create_lifecycle(tool_meta):
-    TOOLS_DIR.mkdir(parents=True, exist_ok=True)
-    tool_file = TOOLS_DIR / f"{tool_meta['name']}.json"
+def merge_tool(tools, tool_meta, category):
+    name = tool_meta.get('name', '')
+    if not name:
+        return
+    tools[category] = [t for t in tools.get(category, []) if t.get('name') != name]
+    tools[category].append(tool_meta)
+
+
+def create_lifecycle(tool_meta, scope):
+    """Create per-tool lifecycle JSON."""
+    tools_dir = OPENCLAW_HOME / "memory" / "tools"
+    tools_dir.mkdir(parents=True, exist_ok=True)
+    tool_file = tools_dir / f"{tool_meta['name']}.json"
     data = {
         'name': tool_meta['name'],
+        'scope': scope,
         'category': tool_meta.get('category', ''),
         'risk_level': tool_meta.get('risk_level', ''),
         'permission': tool_meta.get('permission', ''),
         'description': tool_meta.get('description', ''),
-        'channels': tool_meta.get('channels', 'ALL'),
         'status': tool_meta.get('status', 'active'),
         'registered_at': datetime.now().isoformat(),
         'skill': tool_meta.get('skill', ''),
@@ -151,117 +151,218 @@ def create_lifecycle(tool_meta):
 
 
 def log_event(tool_name, event, detail=''):
-    tool_file = TOOLS_DIR / f"{tool_name}.json"
+    tool_file = OPENCLAW_HOME / "memory" / "tools" / f"{tool_name}.json"
     if tool_file.exists():
         data = json.loads(tool_file.read_text(encoding='utf-8'))
         data['log'].append({'time': datetime.now().isoformat(), 'event': event, 'detail': detail})
         tool_file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
 
 
-def normalize_skill_path(skill_name):
-    if skill_name.startswith('skill-'):
-        return SKILL_DIR / skill_name
-    return SKILL_DIR / f"skill-{skill_name}"
+def find_skill_in_dir(skill_name, base_dir):
+    """Find a skill directory within base_dir. Handles 'skill-' prefix variants."""
+    if not base_dir.exists():
+        return None
+    name_variants = [skill_name, f"skill-{skill_name}", skill_name.replace("skill-", "")]
+    for item in base_dir.iterdir():
+        if item.is_dir():
+            if item.name in name_variants or skill_name in item.name:
+                skill_md = item / "SKILL.md"
+                if skill_md.exists():
+                    return item
+    return None
 
 
-def do_register(skill_name):
-    skill_path = normalize_skill_path(skill_name)
-    if not skill_path.exists():
-        print(f"Error: Skill not found: {skill_path}")
+def discover_topology():
+    """Discover the full deployment topology."""
+    print("\n=== OpenClaw Deployment Topology ===\n")
+    print(f"OPENCLAW_HOME: {OPENCLAW_HOME}")
+    print(f"Gateway skills: {GATEWAY_SKILLS}")
+    print(f"Agent skills:   {AGENT_SKILLS}")
+    print()
+
+    # Gateway layer
+    print("[Gateway Layer] -- ~/.openclaw/skills/")
+    if GATEWAY_SKILLS.exists():
+        gateway_tools = read_tools_md(GATEWAY_TOOLS)
+        gw_total = sum(len(v) for v in gateway_tools.values())
+        print(f"  TOOLS.md: {gw_total} tools registered")
+        skills = [d.name for d in GATEWAY_SKILLS.iterdir() if d.is_dir()]
+        for s in sorted(skills):
+            skill_md = GATEWAY_SKILLS / s / "SKILL.md"
+            tools = parse_frontmatter(skill_md.read_text(encoding='utf-8')) if skill_md.exists() else []
+            print(f"  - {s}/  [{len(tools)} tools declared]")
+    else:
+        print("  (directory does not exist)")
+    print()
+
+    # Agent layer
+    print("[Agent Layer] -- ~/.openclaw/workspace/skills/")
+    if AGENT_SKILLS.exists():
+        agent_tools = read_tools_md(AGENT_TOOLS)
+        ag_total = sum(len(v) for v in agent_tools.values())
+        print(f"  TOOLS.md: {ag_total} tools registered")
+        skills = [d.name for d in AGENT_SKILLS.iterdir() if d.is_dir()]
+        for s in sorted(skills):
+            skill_md = AGENT_SKILLS / s / "SKILL.md"
+            tools = parse_frontmatter(skill_md.read_text(encoding='utf-8')) if skill_md.exists() else []
+            print(f"  - {s}/  [{len(tools)} tools declared]")
+    else:
+        print("  (directory does not exist)")
+    print()
+
+    # Unified TOOLS.md
+    print("[Unified View] -- All registered tools")
+    all_tools = {}
+    for path, scope in [(GATEWAY_TOOLS, 'gateway'), (AGENT_TOOLS, 'agent')]:
+        if path.exists():
+            content = path.read_text(encoding='utf-8')
+            for line in content.split('\n'):
+                if line.startswith('### '):
+                    name = line.lstrip('### ').strip()
+                    if name not in all_tools:
+                        all_tools[name] = scope
+    for name, scope in sorted(all_tools.items()):
+        print(f"  {name}  [{scope}]")
+
+
+def list_all_skills():
+    """List all skills at all levels."""
+    print("\n=== All Skills ===\n")
+    all_skills = []
+    for label, base_dir in [("gateway", GATEWAY_SKILLS), ("agent", AGENT_SKILLS)]:
+        if base_dir.exists():
+            for item in sorted(base_dir.iterdir()):
+                if item.is_dir():
+                    skill_md = item / "SKILL.md"
+                    tools = parse_frontmatter(skill_md.read_text(encoding='utf-8')) if skill_md.exists() else []
+                    all_skills.append({
+                        'name': item.name,
+                        'scope': label,
+                        'path': str(item),
+                        'tools': [t['name'] for t in tools],
+                        'count': len(tools)
+                    })
+    for s in all_skills:
+        print(f"  [{s['scope']:7s}] {s['name']}")
+        print(f"            path: {s['path']}")
+        print(f"            tools: {s['count']} -- {s['tools']}")
+        print()
+
+
+def register_skill(skill_name, scope=None):
+    """Register a skill's tools. Auto-detect scope if not specified."""
+    # Search both layers
+    skill_path = None
+    detected_scope = None
+
+    if scope:
+        dirs = [("gateway", GATEWAY_SKILLS)] if scope == 'gateway' else [("agent", AGENT_SKILLS)]
+    else:
+        dirs = [("gateway", GATEWAY_SKILLS), ("agent", AGENT_SKILLS)]
+
+    for s, base_dir in dirs:
+        found = find_skill_in_dir(skill_name, base_dir)
+        if found:
+            skill_path = found
+            detected_scope = s
+            break
+
+    if not skill_path:
+        print(f"Error: Skill '{skill_name}' not found in gateway or agent skills directories.")
         return
-
-    print(f"\n[REGISTER] {skill_name}")
-    print(f"  path: {skill_path}")
 
     skill_md = skill_path / "SKILL.md"
     if not skill_md.exists():
-        print(f"  Error: SKILL.md not found")
+        print(f"Error: SKILL.md not found in {skill_path}")
         return
 
     tools_meta = parse_frontmatter(skill_md.read_text(encoding='utf-8'))
     if not tools_meta:
-        print(f"  [WARN] No tools_provided found - skipping")
+        print(f"[WARN] No tools_provided found in {skill_md}")
         return
 
-    print(f"  Found {len(tools_meta)} tools: {[t.get('name') for t in tools_meta]}")
+    target_scope = detected_scope
+    tools_path = GATEWAY_TOOLS if target_scope == 'gateway' else AGENT_TOOLS
+    print(f"\n[REGISTER] {skill_name} -> {target_scope} scope")
+    print(f"  path: {skill_path}")
+    print(f"  tools: {[t['name'] for t in tools_meta]}")
 
-    tools = parse_tools_md()
+    # Read existing tools (or start fresh for that scope)
+    existing = read_tools_md(tools_path)
     for tm in tools_meta:
         tm['skill'] = skill_name
         cat = tm.get('category', 'system')
-        if cat not in tools:
-            tools[cat] = []
-        merge_tool(tools, tm, cat)
-        create_lifecycle(tm)
-        log_event(tm['name'], 'registered', f'from skill {skill_name}')
+        if cat not in existing:
+            existing[cat] = []
+        merge_tool(existing, tm, cat)
+        create_lifecycle(tm, target_scope)
+        log_event(tm['name'], 'registered', f'from {skill_name} ({target_scope} scope)')
         print(f"  [OK] {tm['name']} -> {cat}")
 
-    write_tools_md(tools)
-    total = sum(len(v) for v in tools.values())
-    print(f"\n  TOOLS.md updated ({total} tools total)")
+    write_tools_md(tools_path, existing)
+    total = sum(len(v) for v in existing.values())
+    print(f"\n  {tools_path} updated ({total} tools total)")
 
 
-def do_unregister(skill_name):
-    skill_path = normalize_skill_path(skill_name)
-    if not skill_path.exists():
-        print(f"Error: Skill not found: {skill_path}")
-        return
-
-    print(f"\n[UNREGISTER] {skill_name}")
-    skill_md = skill_path / "SKILL.md"
-    if not skill_md.exists():
-        print(f"  Error: SKILL.md not found")
-        return
-
-    tools_meta = parse_frontmatter(skill_md.read_text(encoding='utf-8'))
-    tools = parse_tools_md()
-    removed = 0
-    for tm in tools_meta:
-        name = tm.get('name', '')
-        cat = tm.get('category', '')
-        if cat in tools:
-            before = len(tools[cat])
-            tools[cat] = [t for t in tools[cat] if t.get('name') != name]
-            if len(tools[cat]) < before:
-                removed += 1
-                log_event(name, 'unregistered', f'from skill {skill_name}')
-
-    if removed:
-        write_tools_md(tools)
-        print(f"  Removed {removed} tools, TOOLS.md updated")
-    else:
-        print(f"  Nothing to unregister")
-
-
-def do_list():
-    tools = parse_tools_md()
-    print(f"\n[TOOLS] Total: {sum(len(v) for v in tools.values())} tools across {len(tools)} categories")
-    for cat, cat_tools in tools.items():
-        print(f"\n  {cat} ({len(cat_tools)} tools):")
-        for t in cat_tools:
-            status = t.get('status', 'active')
-            skill = t.get('skill', 'unknown')
-            print(f"    {t['name']} [{status}] <- {skill}")
+def register_all():
+    """Auto-discover all skills and register them."""
+    print("\n[AUTO-REGISTER ALL] Discovering skills across all layers...\n")
+    registered = []
+    for label, base_dir in [("gateway", GATEWAY_SKILLS), ("agent", AGENT_SKILLS)]:
+        if base_dir.exists():
+            for item in sorted(base_dir.iterdir()):
+                if item.is_dir() and (item / "SKILL.md").exists():
+                    skill_name = item.name
+                    print(f"  Processing [{label}]: {skill_name}")
+                    # Check if already registered by reading tools_meta
+                    tools_meta = parse_frontmatter((item / "SKILL.md").read_text(encoding='utf-8'))
+                    if not tools_meta:
+                        print(f"    (no tools_provided, skipping)")
+                        continue
+                    tools_path = GATEWAY_TOOLS if label == 'gateway' else AGENT_TOOLS
+                    existing = read_tools_md(tools_path)
+                    for tm in tools_meta:
+                        tm['skill'] = skill_name
+                        cat = tm.get('category', 'system')
+                        if cat not in existing:
+                            existing[cat] = []
+                        merge_tool(existing, tm, cat)
+                        create_lifecycle(tm, label)
+                        log_event(tm['name'], 'auto-registered', f'from {skill_name}')
+                    write_tools_md(tools_path, existing)
+                    registered.append((skill_name, label, len(tools_meta)))
+    print(f"\n[RESULT] {len(registered)} skills processed:")
+    for name, scope, count in registered:
+        print(f"  {name} [{scope}]: {count} tools")
 
 
 if __name__ == '__main__':
-    args = sys.argv[1:]
+    if len(sys.argv) < 2 or sys.argv[1] == '--help':
+        print(__doc__)
+        sys.exit(0)
 
-    if '--list' in args:
-        args.remove('--list')
-        do_list()
-    elif '--unregister' in args:
-        args.remove('--unregister')
-        if not args:
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+
+    if cmd == 'discover':
+        discover_topology()
+    elif cmd == 'list':
+        list_all_skills()
+    elif cmd == 'register':
+        scope = None
+        if '--scope' in args:
+            idx = args.index('--scope')
+            scope = args[idx + 1] if idx + 1 < len(args) else None
+            args = args[:idx] + args[idx+2:]
+        skill_name = args[0] if args else None
+        if not skill_name:
             print("Error: specify skill name")
-            sys.exit(1)
-        do_unregister(args[0])
-    else:
-        if not args:
             print(__doc__)
-            print("\nUsage:")
-            print("  python3 register_tools.py skill-name          # register")
-            print("  python3 register_tools.py --unregister name # unregister")
-            print("  python3 register_tools.py --list            # list all")
             sys.exit(1)
-        do_register(args[0])
+        register_skill(skill_name, scope=scope)
+    elif cmd == 'register-all':
+        register_all()
+    else:
+        print(f"Unknown command: {cmd}")
+        print(__doc__)
+        sys.exit(1)
