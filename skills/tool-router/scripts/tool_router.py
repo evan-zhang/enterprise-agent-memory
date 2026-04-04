@@ -10,18 +10,6 @@ from pathlib import Path
 TOOLS_MD = Path.home() / ".openclaw" / "workspace" / "TOOLS.md"
 TOOLS_DIR = Path.home() / ".openclaw" / "workspace" / "memory" / "tools"
 
-# Fallback: look in skill directory
-if not TOOLS_MD.exists():
-    TOOLS_MD = Path(__file__).parent / ".." / ".." / ".." / "TOOLS.md"
-    if not TOOLS_MD.exists():
-        TOOLS_MD = Path("/etc/placeholder")  # will trigger error below
-
-if not TOOLS_MD.exists():
-    raise FileNotFoundError(
-        f"TOOLS.md not found at {Path.home() / '.openclaw' / 'workspace' / 'TOOLS.md'} or in skill directory. "
-        "Run: cp TOOLS.md ~/.openclaw/workspace/TOOLS.md"
-    )
-
 # Routing keywords → tool name
 KEYWORD_ROUTES = {
     "web_search": ["搜索", "找一下", "查一下", "最新消息", "search", "google"],
@@ -39,29 +27,40 @@ KEYWORD_ROUTES = {
 }
 
 def parse_tools_md() -> dict:
-    """Parse TOOLS.md into tool metadata dict."""
+    """Parse TOOLS.md for tool list, enrich with per-tool JSON metadata."""
+    if not TOOLS_MD.exists():
+        return {}
     content = TOOLS_MD.read_text(encoding="utf-8")
     tools = {}
-    current = None
+    current_cat = None
     for line in content.split("\n"):
         line = line.rstrip()
-        if line.startswith("### "):
-            current = line[4:].strip()
-            tools[current] = {"name": current, "category": "", "risk_level": "", "permission": "", "description": "", "status": "active"}
-        elif current and line.startswith("- **"):
-            if "**：" in line or "**:" in line:
-                # Parse key: value
-                key_end = line.index("**：") if "**：" in line else line.index("**:")
-                key = line[2:key_end]
-                val = line[key_end+3:].strip()
-                key_map = {
-                    "category": "category", "risk_level": "risk_level",
-                    "permission": "permission", "description": "description",
-                    "status": "status", "notes": "notes"
-                }
-                if key in key_map:
-                    tools[current][key_map[key]] = val
-    return tools
+        if line.startswith("## "):
+            # Category header: "## category -- description"
+            parts = line.lstrip("## ").split("--")[0].strip().split("  ")
+            current_cat = parts[0].strip()
+            tools[current_cat] = []
+        elif line.startswith("### "):
+            # Tool name
+            name = line[4:].strip()
+            if current_cat:
+                tools[current_cat].append({"name": name})
+    # Flatten to {name: meta} and enrich from per-tool JSON
+    flat = {}
+    for cat, cat_tools in tools.items():
+        for t in cat_tools:
+            name = t["name"]
+            # Read full metadata from per-tool JSON
+            tool_file = TOOLS_DIR / f"{name}.json"
+            if tool_file.exists():
+                try:
+                    data = json.loads(tool_file.read_text(encoding="utf-8"))
+                    flat[name] = data
+                except Exception:
+                    flat[name] = {"name": name}
+            else:
+                flat[name] = {"name": name}
+    return flat
 
 def route(task: str) -> list:
     """

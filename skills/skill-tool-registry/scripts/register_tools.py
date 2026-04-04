@@ -61,7 +61,9 @@ def parse_frontmatter(content):
 
 
 def read_tools_md(path):
-    """Read TOOLS.md and return list of (category, tool_name, status)."""
+    """Read TOOLS.md for tool list, then enrich with metadata from per-tool JSON files.
+    Metadata comes from memory/tools/{name}.json, not TOOLS.md (which only has names).
+    """
     if not path.exists():
         return {}
     content = path.read_text(encoding='utf-8')
@@ -75,7 +77,16 @@ def read_tools_md(path):
         elif line.startswith('### '):
             name = line.lstrip('### ').strip()
             if current_cat:
-                tools[current_cat].append({'name': name})
+                # Read full metadata from per-tool JSON, not TOOLS.md
+                tool_file = OPENCLAW_HOME / "memory" / "tools" / f"{name}.json"
+                if tool_file.exists():
+                    try:
+                        data = json.loads(tool_file.read_text(encoding='utf-8'))
+                        tools[current_cat].append(data)
+                    except Exception:
+                        tools[current_cat].append({'name': name})
+                else:
+                    tools[current_cat].append({'name': name})
     return tools
 
 
@@ -276,7 +287,7 @@ def register_skill(skill_name, scope=None):
         print(f"Error: SKILL.md not found in {skill_path}")
         return
 
-    tools_meta = get_skill_tools_with_override(skill_path, skill_name)
+    tools_meta = parse_frontmatter(skill_md.read_text(encoding='utf-8'))
     if not tools_meta:
         print(f"[WARN] No tools_provided found in {skill_md}")
         return
@@ -315,7 +326,7 @@ def register_all():
                     skill_name = item.name
                     print(f"  Processing [{label}]: {skill_name}")
                     # Check if already registered by reading tools_meta
-                    tools_meta = get_skill_tools_with_override(item, skill_name)
+                    tools_meta = parse_frontmatter((item / "SKILL.md").read_text(encoding='utf-8'))
                     if not tools_meta:
                         print(f"    (no tools_provided, skipping)")
                         continue
@@ -336,40 +347,6 @@ def register_all():
         print(f"  {name} [{scope}]: {count} tools")
 
 
-
-
-# ── Local Tools Override ──────────────────────────────────────────────────────
-# ~/.openclaw/workspace/.tools-override.json provides local tool declarations
-# that survive git pulls of skill packages.
-# Override tools take precedence over SKILL.md frontmatter.
-
-def _override_path():
-    from pathlib import Path
-    return Path.home() / ".openclaw" / "workspace" / ".tools-override.json"
-
-def get_override_tools(skill_name):
-    """Return override tools for a skill, or empty list if not defined."""
-    import json
-    p = _override_path()
-    if not p.exists():
-        return []
-    try:
-        data = json.loads(p.read_text(encoding="utf-8"))
-        entry = data.get(skill_name, {})
-        return entry.get("tools", [])
-    except (json.JSONDecodeError, OSError):
-        return []
-
-def get_skill_tools_with_override(skill_path, skill_name):
-    """Get tools from local override first, then SKILL.md as fallback."""
-    skill_md = skill_path / "SKILL.md"
-    override = get_override_tools(skill_name)
-    if override:
-        return override
-    if skill_md.exists():
-        content = skill_md.read_text(encoding="utf-8")
-        return parse_frontmatter(content)
-    return []
 if __name__ == '__main__':
     if len(sys.argv) < 2 or sys.argv[1] == '--help':
         print(__doc__)
