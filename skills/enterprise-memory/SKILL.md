@@ -8,6 +8,28 @@ metadata:
       bins: [python3]
       python: ">=3.10"
 homepage: https://github.com/evan-zhang/enterprise-agent-memory
+tools_provided:
+  - name: eam_init
+    category: system
+    risk_level: medium
+    permission: write
+    description: "Initialize a new EAM project (creates SOP directory structure)"
+    channels: ALL
+    status: active
+  - name: eam_switch
+    category: system
+    risk_level: medium
+    permission: write
+    description: "Switch active EAM project"
+    channels: ALL
+    status: active
+  - name: eam_compress
+    category: system
+    risk_level: medium
+    permission: write
+    description: "Compress old KAIROS logs and archive snapshots"
+    channels: ALL
+    status: active
 ---
 
 # SKILL.md — enterprise-memory

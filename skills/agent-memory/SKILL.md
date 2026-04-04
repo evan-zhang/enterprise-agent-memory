@@ -1,6 +1,28 @@
 ---
-name: zelda-memory
+name: agent-memory
 description: "Structured long-term memory system for agents. Use when: starting a new session and you need context from past sessions; User says something important about preferences feedback or project context; you need to recall information from previous sessions; managing an ongoing project across multiple sessions; checking what you knew about a topic in previous conversations. Provides MEMORY.md index, four memory types, KAIROS daily logs, frontmatter schema, heartbeat maintenance, nightly distillation and workspace scanning. Activate whenever continuity of context matters."
+tools_provided:
+  - name: memory_init
+    category: memory
+    risk_level: medium
+    permission: write
+    description: "Initialize memory directory structure (user/feedback/project/ref/logs/archive)"
+    channels: ALL
+    status: active
+  - name: memory_sync
+    category: memory
+    risk_level: medium
+    permission: write
+    description: "Sync and update MEMORY.md index with latest topic files"
+    channels: ALL
+    status: active
+  - name: memory_distill
+    category: memory
+    risk_level: medium
+    permission: write
+    description: "Nightly distillation: scan KAIROS logs, create/update topic files"
+    channels: ALL
+    status: active
 ---
 
 # agent-memory — 记忆系统
