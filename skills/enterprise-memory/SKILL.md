@@ -1,6 +1,7 @@
 ---
 name: enterprise-memory
-version: 1.2.1
+version: 2.0.1
+github_version: v2.0.1
 description: EAM 规范（Enterprise Agent Memory）企业级 Agent 记忆体系。当用户提到 EAM、企业级记忆、全局项目、项目列表、项目状态、切换项目、查看项目、记忆体系、跨项目共享、全局记忆层时自动加载。提供项目级隔离、状态同步、快照压缩能力。
 metadata:
   openclaw:
@@ -323,6 +324,7 @@ enterprise-memory/
 - Phase 1: 2026-03-31
 - Phase 1.1: 2026-04-02（AI 适配方案）
 - **v2.0: 2026-04-02（吸收 CMS-SOP，统一 SOP 能力）**
+- **v2.0.1: 2026-04-05（同步 frontmatter + github_version + tools_provided，发布流程规范）**
   - 统一 state.json schema（EAM + SOP 扩展字段）
   - 新增 4 个 SOP 脚本（sop_init / sop_state / sop_handover / sop_upgrade）
   - 扩展 STATUS_MAP（13 个状态）
